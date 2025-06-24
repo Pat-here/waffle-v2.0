@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gofry-dashboard-secret-key-2025'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gofry_dashboard.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kRYEJpHTr4EMkVxWEqvw2W7yTNPdP@dpg-d1djcqh5pdvs73akeut0-a/gofry_dashboard'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
