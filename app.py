@@ -14,12 +14,19 @@ DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'gofry-dashboard-secret-key-2025'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kRYEJpHTr4EMkVxWEqvw2W7yTNPdP@dpg-d1djcqh5pdvs73akeut0-a/gofry_dashboard'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+    db.init_app(app)  # rejestracja ORM w kontekście aplikacji
+
+    with app.app_context():
+        db.create_all()  # tworzy tabele zdefiniowane w models.py
+
+    return app
+
+app = create_app()
 
 with app.app_context():
     # Tworzenie tabel, jeśli nie istnieją
