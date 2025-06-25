@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
+
 class Composition(db.Model):
     __tablename__ = 'composition'
     id         = db.Column(db.Integer,   primary_key=True, nullable=False)
