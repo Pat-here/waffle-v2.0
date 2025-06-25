@@ -8,7 +8,7 @@ class Composition(db.Model):
     name       = db.Column(db.String(100), nullable=False)
     price      = db.Column(db.Float,      nullable=False)
     cost       = db.Column(db.Float,      nullable=False)
-    margin     = db.Column(db.Float,     =False)
+    margin     = db.Column(db.Float, nullable=False)
     status     = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime,   nullable=False)
 
