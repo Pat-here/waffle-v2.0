@@ -5,7 +5,11 @@ from wtforms import StringField, TextAreaField, FloatField, IntegerField, Select
 from wtforms.validators import DataRequired, NumberRange
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
+from models import db, Composition, CompositionIngredient, Product, Note, Report, ShoppingItem, WorkTime, User
 import os
+
+DEFAULT_ADMIN_USERNAME = 'admin'
+DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gofry-dashboard-secret-key-2025'
@@ -13,6 +17,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kR
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+with app.app_context():
+    
+    db.create_all()
+
+    
+    if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
+        admin = User(
+            username=DEFAULT_ADMIN_USERNAME,
+            password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
+        )
+        db.session.add(admin)
+        db.session.commit()
 
 # Models
 class User(db.Model):
