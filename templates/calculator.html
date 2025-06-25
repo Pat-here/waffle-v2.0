@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-calculator"></i> Kalkulator Lokalny
+            <small class="text-muted">- Kalkulacja kosztów i marż</small>
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Stwórz nową kompozycję</h5>
+            </div>
+            <div class="card-body">
+                <form id="calculatorForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nazwa kompozycji</label>
+                                <input type="text" class="form-control" id="compositionName" placeholder="np. Gofr deluxe">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Planowana cena sprzedaży</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="targetPrice" step="0.01" placeholder="0.00">
+                                    <span class="input-group-text">zł</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Składniki:</h6>
+                    <div id="ingredients">
+                        <!-- Ingredients will be added here -->
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary" id="addIngredient">
+                        <i class="bi bi-plus"></i> Dodaj składnik
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Kalkulacja</h5>
+            </div>
+            <div class="card-body">
+                <div id="calculation">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Koszt składników:</span>
+                        <strong id="totalCost">0.00 zł</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Cena sprzedaży:</span>
+                        <strong id="salePrice">0.00 zł</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Zysk:</span>
+                        <strong id="profit" class="text-success">0.00 zł</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Marża:</span>
+                        <strong id="margin" class="text-primary">0.0%</strong>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success" id="saveComposition">
+                            <i class="bi bi-check-circle"></i> Zapisz kompozycję
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">Dostępne produkty</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    {% for product in products %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ product.name }}</strong>
+                            <br><small class="text-muted">{{ product.cost }} zł / {{ product.unit }}</small>
+                        </div>
+                        <span class="badge bg-primary">{{ product.category }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const products = {{ products | tojsonfilter }};
+let ingredientCount = 0;
+
+document.getElementById('addIngredient').addEventListener('click', addIngredient);
+document.getElementById('targetPrice').addEventListener('input', updateCalculation);
+document.getElementById('saveComposition').addEventListener('click', saveComposition);
+
+function addIngredient() {
+    const container = document.getElementById('ingredients');
+    const ingredientDiv = document.createElement('div');
+    ingredientDiv.className = 'row mb-2 ingredient-row';
+    ingredientDiv.innerHTML = `
+        <div class="col-md-6">
+            <select class="form-select product-select" data-id="${ingredientCount}">
+                <option value="">Wybierz produkt</option>
+                ${products.map(p => `<option value="${p.id}" data-cost="${p.cost}" data-unit="${p.unit}">${p.name} (${p.cost} zł/${p.unit})</option>`).join('')}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="number" class="form-control quantity-input" placeholder="Ilość" step="0.01" data-id="${ingredientCount}">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-ingredient">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+
+    container.appendChild(ingredientDiv);
+
+    // Add event listeners
+    ingredientDiv.querySelector('.product-select').addEventListener('change', updateCalculation);
+    ingredientDiv.querySelector('.quantity-input').addEventListener('input', updateCalculation);
+    ingredientDiv.querySelector('.remove-ingredient').addEventListener('click', function() {
+        ingredientDiv.remove();
+        updateCalculation();
+    });
+
+    ingredientCount++;
+}
+
+function updateCalculation() {
+    let totalCost = 0;
+    const ingredients = document.querySelectorAll('.ingredient-row');
+
+    ingredients.forEach(row => {
+        const select = row.querySelector('.product-select');
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+
+        if (select.value && quantity > 0) {
+            const option = select.selectedOptions[0];
+            const cost = parseFloat(option.dataset.cost) || 0;
+            totalCost += cost * quantity;
+        }
+    });
+
+    const salePrice = parseFloat(document.getElementById('targetPrice').value) || 0;
+    const profit = salePrice - totalCost;
+    const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
+
+    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' zł';
+    document.getElementById('salePrice').textContent = salePrice.toFixed(2) + ' zł';
+    document.getElementById('profit').textContent = profit.toFixed(2) + ' zł';
+    document.getElementById('margin').textContent = margin.toFixed(1) + '%';
+
+    // Update colors based on profitability
+    const profitElement = document.getElementById('profit');
+    const marginElement = document.getElementById('margin');
+
+    if (profit > 0) {
+        profitElement.className = 'text-success';
+        marginElement.className = 'text-success';
+    } else if (profit < 0) {
+        profitElement.className = 'text-danger';
+        marginElement.className = 'text-danger';
+    } else {
+        profitElement.className = 'text-muted';
+        marginElement.className = 'text-muted';
+    }
+}
+
+function saveComposition() {
+    const name = document.getElementById('compositionName').value;
+    const price = parseFloat(document.getElementById('targetPrice').value) || 0;
+
+    if (!name || price <= 0) {
+        alert('Podaj nazwę i cenę kompozycji');
+        return;
+    }
+
+    const ingredients = [];
+    document.querySelectorAll('.ingredient-row').forEach(row => {
+        const select = row.querySelector('.product-select');
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+
+        if (select.value && quantity > 0) {
+            ingredients.push({
+                product_id: parseInt(select.value),
+                quantity: quantity
+            });
+        }
+    });
+
+    if (ingredients.length === 0) {
+        alert('Dodaj przynajmniej jeden składnik');
+        return;
+    }
+
+    // Here you would normally send this to the server
+    console.log('Saving composition:', { name, price, ingredients });
+    alert('Kompozycja została zapisana!');
+
+    // Reset form
+    document.getElementById('calculatorForm').reset();
+    document.getElementById('ingredients').innerHTML = '';
+    updateCalculation();
+}
+
+// Add first ingredient by default
+addIngredient();
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-cart"></i> Lista Zakupów
+                <small class="text-muted">- Produkty do zamówienia</small>
+            </h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateListModal">
+                <i class="bi bi-plus-circle"></i> Generuj listę
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Aktualna lista zakupów</h5>
+            </div>
+            <div class="card-body">
+                {% if shopping_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Produkt</th>
+                                <th>Ilość</th>
+                                <th>Priorytet</th>
+                                <th>Status</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item, product in shopping_items %}
+                            <tr>
+                                <td>{{ product.name }}</td>
+                                <td>{{ item.quantity }} {{ product.unit }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if item.priority == 'High' %}bg-danger
+                                        {% elif item.priority == 'Medium' %}bg-warning
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ item.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ item.status }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-success" title="Oznacz jako kupione">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Usuń">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-cart-x fs-1 text-muted"></i>
+                    <p class="mt-3 text-muted">Lista zakupów jest pusta</p>
+                    <p class="text-muted">Kliknij "Generuj listę" aby automatycznie dodać produkty z niskim stanem</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate List Modal -->
+<div class="modal fade" id="generateListModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generuj listę zakupów</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Automatycznie dodać do listy produkty z niskim stanem magazynowym?</p>
+                <p class="text-muted">Produkty z mniej niż 5 jednostkami zostaną dodane do listy.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="generateShoppingList()">Generuj</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generateShoppingList() {
+    // In a real app, this would make an API call
+    alert('Lista zakupów została wygenerowana!');
+    location.reload();
+}
+</script>
+{% endblock %}

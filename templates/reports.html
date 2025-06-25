@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-graph-up"></i> Raporty
+                <small class="text-muted">- Analiza sprzedaży</small>
+            </h2>
+            <a href="{{ url_for('add_report') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nowy raport
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ reports|length }}</h4>
+                <small>Raportów</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ "{:.2f}".format(reports|sum(attribute='revenue')|float) }} zł</h4>
+                <small>Łączny przychód</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ reports|sum(attribute='orders_count') }}</h4>
+                <small>Zamówień</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ "{:.2f}".format(reports|sum(attribute='profit')|float) }} zł</h4>
+                <small>Zysk</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Przychód</th>
+                                <th>Zamówienia</th>
+                                <th>Koszty</th>
+                                <th>Zysk</th>
+                                <th>Marża</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                            <tr>
+                                <td>{{ report.date.strftime('%d.%m.%Y') }}</td>
+                                <td>{{ "%.2f"|format(report.revenue) }} zł</td>
+                                <td>{{ report.orders_count }}</td>
+                                <td>{{ "%.2f"|format(report.costs) }} zł</td>
+                                <td class="{{ 'text-success' if report.profit > 0 else 'text-danger' }}">
+                                    {{ "%.2f"|format(report.profit) }} zł
+                                </td>
+                                <td>
+                                    {% if report.revenue > 0 %}
+                                        {{ "%.1f"|format((report.profit / report.revenue) * 100) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" title="Edytuj">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" title="Szczegóły">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

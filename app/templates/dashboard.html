@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Dashboard
+            <small class="text-muted">- Przegląd biznesu</small>
+        </h2>
+    </div>
+</div>
+
+<div class="row mb-4" id="stats-cards">
+    <!-- Stats will be loaded here -->
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Przychody - ostatnie 7 dni
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Popularne produkty
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="productsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Niski stan magazynowy
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="low-stock-items">
+                    <!-- Low stock items will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Szybkie akcje
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('add_product') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Dodaj produkt
+                    </a>
+                    <a href="{{ url_for('add_composition') }}" class="btn btn-outline-success">
+                        <i class="bi bi-collection"></i> Nowa kompozycja
+                    </a>
+                    <a href="{{ url_for('add_report') }}" class="btn btn-outline-info">
+                        <i class="bi bi-graph-up"></i> Dodaj raport dzienny
+                    </a>
+                    <a href="{{ url_for('add_note') }}" class="btn btn-outline-warning">
+                        <i class="bi bi-journal-plus"></i> Nowa notatka
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    initCharts();
+});
+
+function loadDashboardStats() {
+    fetch('/api/dashboard_stats')
+        .then(response => response.json())
+        .then(data => {
+            const statsContainer = document.getElementById('stats-cards');
+            statsContainer.innerHTML = `
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>${data.total_products}</h4>
+                                    <small>Produktów</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-box-seam fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>${data.total_compositions}</h4>
+                                    <small>Kompozycji</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-collection fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>${data.low_stock_products}</h4>
+                                    <small>Niski stan</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-exclamation-triangle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>${data.monthly_revenue.toFixed(2)} zł</h4>
+                                    <small>Przychód m-c</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-currency-exchange fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => console.error('Error loading stats:', error));
+}
+
+function initCharts() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'],
+            datasets: [{
+                label: 'Przychód (zł)',
+                data: [320, 450, 380, 520, 680, 850, 720],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Products Chart
+    const productsCtx = document.getElementById('productsChart').getContext('2d');
+    new Chart(productsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Gofr podstawowy', 'Gofr z Nutellą', 'Gofr owocowy', 'Premium'],
+            datasets: [{
+                data: [35, 25, 25, 15],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
