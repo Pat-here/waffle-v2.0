@@ -12,27 +12,14 @@ from sqlalchemy_utils import database_exists, create_database
 DEFAULT_ADMIN_USERNAME = 'admin'
 DEFAULT_ADMIN_PASSWORD = 'admin123'
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://…'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
-def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    db.init_app(app)  # rejestracja ORM w kontekście aplikacji
-
-    with app.app_context():
-        db.create_all()  # tworzy tabele zdefiniowane w models.py
-
-    return app
-
-app = create_app()
+db.init_app(app)  # inicjalizacja ORM
 
 with app.app_context():
-    # Tworzenie tabel, jeśli nie istnieją
-    db.create_all()
-
-    # Dodanie domyślnego konta administratora
+    db.create_all()  # tworzy tabele, jeśli nie istnieją[3]
     if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
         admin = User(
             username=DEFAULT_ADMIN_USERNAME,
