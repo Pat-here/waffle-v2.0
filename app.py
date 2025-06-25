@@ -365,6 +365,17 @@ def init_db():
 
         db.session.commit()
 
+with app.app_context():
+    try:
+        # Sprawdź, czy istnieje tabela 'user' (czyli czy baza już była inicjalizowana)
+        inspector = db.inspect(db.engine)
+        if 'user' not in inspector.get_table_names():
+            print("Brak bazy – inicjalizuję...")
+            init_db()
+    except Exception as e:
+        print(f"Błąd podczas sprawdzania/inicjalizacji bazy: {e}")
+
+
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get("PORT", 5000))
