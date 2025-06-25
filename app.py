@@ -13,25 +13,22 @@ DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 
 
-def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+dapp = Flask(__name__)
+app.config['SECRET_KEY'] = 'gofry-dashboard-secret-key-2025'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kRYEJpHTr4EMkVxWEqvw2W7yTNPdP@dpg-d1djcqh5pdvs73akeut0-a/gofry_dashboard'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Rejestracja ORM w aplikacji
-    db.init_app(app)  # inicjalizacja relacji db <-> app[2]
-
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
-            admin = User(
-                username=DEFAULT_ADMIN_USERNAME,
+db = SQLAlchemy(app)
+with app.app_context():
+    db.create_all()
+    if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
+           admin = User(
+               username=DEFAULT_ADMIN_USERNAME,
                 password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
             )
             db.session.add(admin)
             db.session.commit()
 
-    return app
 
 app = create_app()
 # Models
