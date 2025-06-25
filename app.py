@@ -18,6 +18,28 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://…'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    db.init_app(app)  # 1) rejestracja ORM w aplikacji[1]
+
+    with app.app_context():
+        db.create_all()  # 2) tworzy tabele, jeśli ich brak
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                password_hash=generate_password_hash('admin123')
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+    return app
+
+app = create_app()
+
+
 with app.app_context():
     
     db.create_all()
