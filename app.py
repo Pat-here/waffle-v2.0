@@ -19,9 +19,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 def create_app():
-
-    db.init_app(app)  # 1) rejestracja ORM w aplikacji[1]
-
     with app.app_context():
         db.create_all()  # 2) tworzy tabele, jeśli ich brak
         if not User.query.filter_by(username='admin').first():
