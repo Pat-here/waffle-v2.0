@@ -5,30 +5,19 @@ from wtforms import StringField, TextAreaField, FloatField, IntegerField, Select
 from wtforms.validators import DataRequired, NumberRange
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
-from models import db
 import os
-from sqlalchemy_utils import database_exists, create_database
 
 DEFAULT_ADMIN_USERNAME = 'admin'
 DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///budka_gofrowa.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(app)  # inicjalizacja ORM
+db = SQLAlchemy(app)
 
-with app.app_context():
-    db.create_all()  # tworzy tabele, jeśli nie istnieją[3]
-    if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
-        admin = User(
-            username=DEFAULT_ADMIN_USERNAME,
-            password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
-        )
-        db.session.add(admin)
-        db.session.commit()
-
-# Models
+# Models (wszystkie w jednym pliku)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -89,6 +78,73 @@ class ShoppingItem(db.Model):
     priority = db.Column(db.String(20), default='Medium')
     status = db.Column(db.String(20), default='Oczekuje')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Inicjalizacja bazy danych i danych testowych
+def init_db():
+    with app.app_context():
+        db.create_all()
+        
+        # Create admin user if not exists
+        if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
+            admin = User(
+                username=DEFAULT_ADMIN_USERNAME,
+                password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
+            )
+            db.session.add(admin)
+        
+        # Add sample data if database is empty
+        if Product.query.count() == 0:
+            sample_products = [
+                Product(name="Mąka", category="Podstawowe", cost=3.50, unit="kg", stock=10),
+                Product(name="Jajka", category="Podstawowe", cost=12.00, unit="30szt", stock=2),
+                Product(name="Mleko", category="Podstawowe", cost=3.20, unit="1l", stock=5),
+                Product(name="Masło", category="Podstawowe", cost=8.50, unit="500g", stock=3),
+                Product(name="Cukier", category="Podstawowe", cost=4.00, unit="1kg", stock=8),
+                Product(name="Nutella", category="Dodatki", cost=15.00, unit="750g", stock=4),
+                Product(name="Bita śmietana", category="Dodatki", cost=6.50, unit="500ml", stock=6),
+                Product(name="Truskawki", category="Owoce", cost=12.00, unit="500g", stock=3),
+                Product(name="Banany", category="Owoce", cost=6.00, unit="1kg", stock=2),
+            ]
+            
+            for product in sample_products:
+                db.session.add(product)
+            
+            sample_compositions = [
+                Composition(name="Gofr podstawowy", price=8.00, cost=2.50, margin=68.75),
+                Composition(name="Gofr z Nutellą", price=12.00, cost=4.20, margin=65.00),
+                Composition(name="Gofr owocowy", price=15.00, cost=5.80, margin=61.33),
+                Composition(name="Gofr premium", price=18.00, cost=6.50, margin=63.89),
+            ]
+            
+            for comp in sample_compositions:
+                db.session.add(comp)
+            
+            sample_notes = [
+                Note(title="Zamówienie na piątek", content="Zamówić więcej truskawek na weekend"),
+                Note(title="Nowy dostawca", content="Sprawdzić ceny u dostawcy z Krakowa"),
+            ]
+            
+            for note in sample_notes:
+                db.session.add(note)
+                
+        db.session.commit()
+
+# Automatyczna inicjalizacja bazy na Renderze
+with app.app_context():
+    try:
+        inspector = db.inspect(db.engine)
+        if 'user' not in inspector.get_table_names():
+            print("Inicjalizuję bazę danych...")
+            init_db()
+            print("Baza danych zainicjalizowana pomyślnie!")
+    except Exception as e:
+        print(f"Błąd podczas inicjalizacji bazy: {e}")
+        # Spróbuj utworzyć bazę mimo błędu
+        try:
+            init_db()
+            print("Baza danych utworzona pomimo błędów!")
+        except Exception as e2:
+            print(f"Krytyczny błąd bazy danych: {e2}")
 
 # Forms
 class LoginForm(FlaskForm):
@@ -195,8 +251,8 @@ def add_composition():
         composition = Composition(
             name=form.name.data,
             price=form.price.data,
-            cost=0,  # Will be calculated based on ingredients
-            margin=0  # Will be calculated
+            cost=0,
+            margin=0
         )
         db.session.add(composition)
         db.session.commit()
@@ -316,67 +372,7 @@ def dashboard_stats():
         'monthly_revenue': monthly_revenue
     })
 
-def init_db():
-    with app.app_context():
-        db.create_all()
-
-        # Create admin user if not exists
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                password_hash=generate_password_hash('admin123')
-            )
-            db.session.add(admin)
-
-        # Add sample data if database is empty
-        if Product.query.count() == 0:
-            sample_products = [
-                Product(name="Mąka", category="Podstawowe", cost=3.50, unit="kg", stock=10),
-                Product(name="Jajka", category="Podstawowe", cost=12.00, unit="30szt", stock=2),
-                Product(name="Mleko", category="Podstawowe", cost=3.20, unit="1l", stock=5),
-                Product(name="Masło", category="Podstawowe", cost=8.50, unit="500g", stock=3),
-                Product(name="Cukier", category="Podstawowe", cost=4.00, unit="1kg", stock=8),
-                Product(name="Nutella", category="Dodatki", cost=15.00, unit="750g", stock=4),
-                Product(name="Bita śmietana", category="Dodatki", cost=6.50, unit="500ml", stock=6),
-                Product(name="Truskawki", category="Owoce", cost=12.00, unit="500g", stock=3),
-                Product(name="Banany", category="Owoce", cost=6.00, unit="1kg", stock=2),
-            ]
-
-            for product in sample_products:
-                db.session.add(product)
-
-            sample_compositions = [
-                Composition(name="Gofr podstawowy", price=8.00, cost=2.50, margin=68.75),
-                Composition(name="Gofr z Nutellą", price=12.00, cost=4.20, margin=65.00),
-                Composition(name="Gofr owocowy", price=15.00, cost=5.80, margin=61.33),
-                Composition(name="Gofr premium", price=18.00, cost=6.50, margin=63.89),
-            ]
-
-            for comp in sample_compositions:
-                db.session.add(comp)
-
-            sample_notes = [
-                Note(title="Zamówienie na piątek", content="Zamówić więcej truskawek na weekend"),
-                Note(title="Nowy dostawca", content="Sprawdzić ceny u dostawcy z Krakowa"),
-            ]
-
-            for note in sample_notes:
-                db.session.add(note)
-
-        db.session.commit()
-
-with app.app_context():
-    try:
-        # Sprawdź, czy istnieje tabela 'user' (czyli czy baza już była inicjalizowana)
-        inspector = db.inspect(db.engine)
-        if 'user' not in inspector.get_table_names():
-            print("Brak bazy – inicjalizuję...")
-            init_db()
-    except Exception as e:
-        print(f"Błąd podczas sprawdzania/inicjalizacji bazy: {e}")
-
-
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=True, host='0.0.0.0', port=port)
