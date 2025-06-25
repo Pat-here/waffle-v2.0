@@ -13,7 +13,7 @@ DEFAULT_ADMIN_USERNAME = 'admin'
 DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://…'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kRYEJpHTr4EMkVxWEqvw2W7yTNPdP@dpg-d1djcqh5pdvs73akeut0-a/gofry_dashboard'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)  # inicjalizacja ORM
