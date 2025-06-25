@@ -19,9 +19,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://…'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)  # 1) rejestracja ORM w aplikacji[1]
 
