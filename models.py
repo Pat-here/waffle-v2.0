@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
+from app import db
 
 class Composition(db.Model):
     __tablename__ = 'composition'
