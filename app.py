@@ -21,15 +21,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-engine_url = app.config['SQLALCHEMY_DATABASE_URI']
-if not database_exists(engine_url):
-    create_database(engine_url)
-           admin = User(
-               username=DEFAULT_ADMIN_USERNAME,
-                password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
-            )
-            db.session.add(admin)
-            db.session.commit()
+with app.app_context():
+    # Tworzenie tabel, jeśli nie istnieją
+    db.create_all()
+
+    # Dodanie domyślnego konta administratora
+    if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
+        admin = User(
+            username=DEFAULT_ADMIN_USERNAME,
+            password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
+        )
+        db.session.add(admin)
+        db.session.commit()
 
 # Models
 class User(db.Model):
