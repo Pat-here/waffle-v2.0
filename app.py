@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
 from models import db, Composition, CompositionIngredient, Product, Note, Report, ShoppingItem, WorkTime, User
 import os
+from sqlalchemy_utils import database_exists, create_database
 
 DEFAULT_ADMIN_USERNAME = 'admin'
 DEFAULT_ADMIN_PASSWORD = 'admin123'
@@ -19,9 +20,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://gofry_dashboard_user:zJ1kR
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-with app.app_context():
-    db.create_all()
-    if not User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first():
+
+engine_url = app.config['SQLALCHEMY_DATABASE_URI']
+if not database_exists(engine_url):
+    create_database(engine_url)
            admin = User(
                username=DEFAULT_ADMIN_USERNAME,
                 password_hash=generate_password_hash(DEFAULT_ADMIN_PASSWORD)
@@ -29,8 +31,6 @@ with app.app_context():
             db.session.add(admin)
             db.session.commit()
 
-
-app = create_app()
 # Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
